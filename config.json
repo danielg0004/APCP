@@ -1,0 +1,13 @@
+{
+  "sample_rate": 44100,
+  "tone_duration": 0.2,
+  "volume": 1.0,
+  "duration_per_sample": 0.1,
+  "min_magnitude": 90000,
+  "chunk_size": 1024,
+  "fft_size": 8192,
+  "num_channels": 15,
+  "bits_per_tone": 2,
+  "freq_steps": 50,
+  "starting_frequency": 17000
+}
