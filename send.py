@@ -3,9 +3,9 @@
 import numpy as np
 from scipy.io.wavfile import write
 import json
-from freq_map import START_FREQ, END_FREQ, freq_maps, NUM_CHANNELS, BITS_PER_TONE
+from setup_constants import START_FREQ, END_FREQ, freq_maps, NUM_CHANNELS, BITS_PER_TONE
 
-with open('config.json') as f:
+with open("config.json") as f:
     config = json.load(f)
 
 SAMPLE_RATE = config["sample_rate"]
@@ -30,7 +30,7 @@ def _create_audio(frequencies: list[float]) -> np.ndarray:
         tones.append(_generate_tone(freq))
     return np.concatenate(tones)
 
-def _save_audio(audio_data: np.ndarray, file_name: str ="audio") -> None:
+def _save_audio(audio_data: np.ndarray, file_name: str = "audio") -> None:
     """
     Saves the audio data on a .wav file
     Changes the audio data from a normalized (-1, 1) value to 16-bit signed integers (standard WAV format)
@@ -89,7 +89,7 @@ def _fragments_to_audio(fragments: list[str]) -> np.ndarray:
         sep_freq = freq_maps[i]["SEPARATE"]
         sep_tone = _generate_tone(sep_freq)
 
-        # Calculate how many samples needed to pad
+        # Calculate how many samples are needed to pad
         pad_len = max_len - len(audio)
         if pad_len > 0:
             # Repeat the separator tone to cover the padding length
@@ -107,7 +107,7 @@ def _fragments_to_audio(fragments: list[str]) -> np.ndarray:
     ])
     
 # The main function the cli.py will call
-def create_audio_file(text: str, output_file_name: str ="audio") -> None:
+def create_audio_file(text: str, output_file_name: str = "audio") -> None:
     '''
     Encodes a text message into an audio file
     
