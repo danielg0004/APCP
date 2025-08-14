@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.io.wavfile import write
 import json
+import sounddevice as sd
 from setup_constants import START_FREQ, END_FREQ, freq_maps, NUM_CHANNELS, BITS_PER_TONE
 
 with open("config.json") as f:
@@ -12,8 +13,6 @@ SAMPLE_RATE = config["sample_rate"]
 TONE_DURATION = config["tone_duration"]
 VOLUME = config["volume"]
 MAX_INT16 = 32767 # Max number a 16 bit signed int can hold (2^15 - 1)
-
-
 
 def _generate_tone(frequency: float) -> np.ndarray:
     # Generates a pure sine wave at a specific frequency
@@ -105,18 +104,27 @@ def _fragments_to_audio(fragments: list[str]) -> np.ndarray:
     return np.concatenate([
         _generate_tone(START_FREQ), combined, _generate_tone(END_FREQ)
     ])
-    
+
+def _play_audio(audio_data: np.ndarray) -> None:
+    # Plays audio data
+    sd.play(audio_data, samplerate=SAMPLE_RATE)
+    sd.wait() # Wait for the playback to be finished
+
 # The main function the cli.py will call
-def create_audio_file(text: str, output_file_name: str = "audio") -> None:
+def create_audio_file(text: str, play: bool, save: bool, output_file_name: str) -> None:
     '''
     Encodes a text message into an audio file
     
     Args:
         text (str): The message to encode
+        play (bool): Whether to play audio
+        save (bool): Whether to save audio as WAV file
         output_file_name (str): The name of the output WAV file
     '''
     bits = _text_to_bits(text)
     fragmetns = _divide_binary_str(bits)
     audio = _fragments_to_audio(fragmetns)
-    
-    _save_audio(audio, output_file_name)
+    if save:
+        _save_audio(audio, output_file_name)
+    if play:
+        _play_audio(audio)
