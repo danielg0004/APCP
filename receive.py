@@ -4,6 +4,7 @@ import numpy as np
 import pyaudio
 import json
 from setup_constants import START_FREQ, END_FREQ, FREQ_STEPS, NUM_CHANNELS, freq_maps, freq_ranges
+from typing import Generator
 
 with open("config.json") as f:
     config = json.load(f)
@@ -71,8 +72,6 @@ def _get_channel_frequencies() -> list[list[int]]:
     ended = False
     audios = []
     
-    print("Listening for a signal...")
-    
     while not ended:
         audio_data = _record_audio_from_stream(stream)
         freqs, magnitude = _extract_frequency(audio_data) # Uses FFT to get list of frequencies and their magnitudes
@@ -107,8 +106,7 @@ def _filter_channel_frequencies(freqs: list[list[int]]) -> list[list[int]]:
             if freqs[i][j] != freq_maps[i]["SEPARATE"]:
                 if j==0 or freqs[i][j] != freqs[i][j-1]:
                     filtered_freqs[i].append(freqs[i][j])
-    return filtered_freqs
-    
+    return filtered_freqs 
 
 def _frequencies_to_bits(freqs: list[list[int]]) -> str:
     # Converts a list of frequencies for each channel into a string of bits
@@ -123,8 +121,7 @@ def _bits_to_text(bits: str) -> str:
     chars = [bits[i:i+8] for i in range(0, len(bits), 8)]
     return "".join(chr(int(c, 2)) for c in chars)
 
-# The main function the cli.py will call
-def listen_and_decode() -> str:
+def _listen_and_decode_buffered() -> str:
     '''
     Listens for and decodes an audio message
     
@@ -132,12 +129,67 @@ def listen_and_decode() -> str:
         str: The decoded text message
     '''
     
-    print("Starting to decode audio message...")
-    
     received_freqs = _get_channel_frequencies()
     filtered_freqs = _filter_channel_frequencies(received_freqs) # Filter the frequencies
-
     binary_str = _frequencies_to_bits(filtered_freqs)
     text = _bits_to_text(binary_str)
     
     return text
+
+def _listen_and_decode_realtime() -> Generator[str, None, None]:
+    '''
+    Listens for and decodes an audio message in real time
+    
+    Yields:
+        str: The (partial) decoded text message
+    '''
+    # Listens to the audio stream and extracts the frequencies for each channel
+    freqs_received = [[] for _ in range(NUM_CHANNELS)]
+    p, stream = _get_audio_stream()
+    started = False
+    ended = False
+    
+    while not ended:
+        audio_data = _record_audio_from_stream(stream)
+        freqs, magnitude = _extract_frequency(audio_data) # Uses FFT to get list of frequencies and their magnitudes
+        
+        first_channel_passed = False
+        
+        for i in range(NUM_CHANNELS+1):
+            dominant_freq, confidence = _filter_frequency_range(freqs, magnitude, freq_ranges[i]) # Filters by the control range and returns dominant frequency
+            if dominant_freq and (confidence >= MIN_MAGNITUDE or i!=0): # Disregard noise
+                if i==0:
+                    first_channel_passed = True
+                dominant_freq = round(dominant_freq / FREQ_STEPS) * FREQ_STEPS # Round it to the nearest possible value
+                if dominant_freq==START_FREQ:
+                    started = True
+                elif dominant_freq==END_FREQ:
+                    ended = True
+                elif started and not first_channel_passed: # To make sure no channels' frequencies are recorded if there's a control frequency (start/end)
+                    freqs_received[i-1].append(dominant_freq)
+        if started:
+            # Yield the current progress
+            
+            filtered_freqs = _filter_channel_frequencies(freqs_received) # Filter the frequencies
+            binary_str = _frequencies_to_bits(filtered_freqs)
+            text = _bits_to_text(binary_str)
+            yield text
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+    
+# The main function the cli.py will call
+def listen_and_decode(real_time: bool) -> Generator[str, None, None]:
+    '''
+    Listens for and decodes an audio message
+    
+    Args:
+        real_time (bool): Whether to decode in real time
+    
+    Yields:
+        str: The (partial or complete) decoded text message
+    '''
+    if real_time:
+        yield from _listen_and_decode_realtime() # Mirrors the generator
+    else:
+        yield _listen_and_decode_buffered()
