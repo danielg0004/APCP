@@ -1,0 +1,4 @@
+numpy==2.2.6
+pyaudio==0.2.14
+scipy==1.16.1
+sounddevice==0.5.2
