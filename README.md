@@ -1,5 +1,5 @@
 # APCP: a sound-based communication protocol
-[▶ Watch the demo](APCP_demo.mp4)
+[Watch the demo](APCP_demo.mp4)
 ## Introduction
 APCP is a protocol that transmits data between devices through sound. Built to send messages silently (ultrasound) between devices without wifi.
 It's based on Frequency-Shift Keying ([FSK](https://en.wikipedia.org/wiki/Frequency-shift_keying)), which encodes data by shifting between different frequencies.
