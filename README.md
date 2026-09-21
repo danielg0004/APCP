@@ -7,7 +7,7 @@ Requires Python 3.10+.
 1. Clone the repository. Use `git clone https://github.com/danielg0004/APCP` to download the code.
 2. Install dependencies by running `pip install -r requirements.txt`.
 3. Use the CLI to send and receive messages:
-  - **Sending messages:** `python cli.py send "[Message to send]" (additional arguments)`. Example: `python cli.py "Hello World!" --save --filename "output"`.
+  - **Sending messages:** `python cli.py send "[Message to send]" (additional arguments)`. Example: `python cli.py send "Hello World!" --save --filename "output"`.
   - **Receiving messages:** `python cli.py receive`. Add the argument `--realtime` afterwards to use the alternative architecture (may be slower or more prone to error).
   - Use `python cli.py --help`, `python cli.py send --help`, or `python cli.py receive --help` to view the descriptions of the fields.
 ## How it works
